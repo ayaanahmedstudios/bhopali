@@ -7,6 +7,7 @@
 <meta name="description" content="Bhopali is a display serif typeface inspired by the domes and minarets of Bhopal, India. Smooth serifs, sharp edges, solid weight.">
 <link rel="preconnect" href="https://api.fontshare.com">
 <link href="https://api.fontshare.com/v2/css?f[]=general-sans@500,600,700&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/animejs/3.2.2/anime.min.js"></script>
 <link rel="icon" href="Bhopali-Icon.png">
 
 <style>
@@ -53,6 +54,20 @@
   a{text-decoration:none;}
 
   /* ---------- custom cursor: arch shape ---------- */
+  /* a thin bar that fills left-to-right as you scroll — the clearest,
+     most literal "scroll animation" there is */
+  .scroll-progress{
+    position:fixed;
+    top:0;left:0;
+    height:3px;
+    width:100%;
+    background:var(--rose-500);
+    transform-origin:left center;
+    transform:scaleX(0);
+    z-index:300;
+    pointer-events:none;
+  }
+
   .arch-cursor{
     position:fixed;
     top:0;left:0;
@@ -147,6 +162,11 @@
     .bg-dots{background-size:3px 3px; opacity:.65;}
     .bg-dim{background:rgba(6,16,13,.62);}
   }
+  /* Take it home needs a darker read than the hero — the button and
+     type there sit right on top of the footage with less surrounding
+     chrome to help it stand out. */
+  #download .bg-dim{background:rgba(5,12,10,.72);}
+  #download .bg-tint{opacity:.45;}
 
   /* ambient floating particles — placed in the margins, well clear of
      the title/coords/buttons, so nothing ever collides with text */
@@ -156,11 +176,6 @@
     background:var(--rose-500);
     pointer-events:none;
     z-index:2;
-    animation:drift 9s ease-in-out infinite;
-  }
-  @keyframes drift{
-    0%,100%{transform:translateY(0) translateX(0); opacity:.35;}
-    50%{transform:translateY(-22px) translateX(10px); opacity:.8;}
   }
 
   /* ---------- hero ---------- */
@@ -207,16 +222,35 @@
 
   /* Hidden until Bhopali is confirmed loaded via the Font Loading API —
      this stops the fallback serif from ever flashing on screen before
-     swapping to the real font. Letters focus into view — a soft blur
-     and scale settle, rather than a plain fade. */
+     swapping to the real font. Letters focus into view once, then stay
+     put — fully static and legible. All ongoing motion nearby lives in
+     the decorative brackets beside it, never on the word itself. */
+  .title-row{
+    display:flex;
+    align-items:center;
+    justify-content:center;
+    gap:18px;
+    width:100%;
+    max-width:100%;
+  }
+  .title-bracket{
+    flex-shrink:0;
+    width:16px;
+    height:16px;
+  }
+  .title-bracket.left{border-left:2px solid var(--rose-300); border-top:2px solid var(--rose-300);}
+  .title-bracket.right{border-right:2px solid var(--rose-300); border-bottom:2px solid var(--rose-300);}
+  @media(max-width:640px){ .title-bracket{display:none;} }
+
   .hero-title{
-    font-size:clamp(160px, 34vw, 280px);
+    font-size:clamp(120px, 30vw, 280px);
     line-height:.88;
     color:var(--cream);
     display:flex;
     align-items:center;
     justify-content:center;
-    flex-wrap:wrap;
+    flex-wrap:nowrap;
+    white-space:nowrap;
     margin-top:-0.12em;
     opacity:0;
     transition:opacity .15s linear;
@@ -232,17 +266,6 @@
   }
   .hero-title.ready .letter{opacity:1; filter:blur(0); transform:scale(1);}
 
-  /* once settled, a slow shimmer drifts through the letters forever —
-     opacity only, nothing that moves or blinks, just a quiet pulse of
-     light passing across the word */
-  .hero-title.alive .letter{
-    animation:letterShimmer 4.4s ease-in-out infinite;
-    animation-delay:calc(var(--i) * 0.18s);
-  }
-  @keyframes letterShimmer{
-    0%,100%{opacity:1;}
-    50%{opacity:.55;}
-  }
 
   .hero-sub{
     font-weight:500;
@@ -390,8 +413,24 @@
     cursor:pointer;
     transition:background .12s linear, color .12s linear;
   }
+  .glyph-char{display:inline-block; transform:translateY(0.1em);}
   .cell:hover{background:rgba(244,238,226,.12);}
   .cell.active{background:var(--rose-500); color:var(--ink);}
+  /* a ring keeps pulsing outward from whichever character is selected —
+     the clearest possible sign that this section is alive on its own */
+  .cell.active::after{
+    content:'';
+    position:absolute;
+    inset:0;
+    border-radius:12px;
+    border:1.5px solid var(--rose-500);
+    animation:cellRing 1.8s ease-out infinite;
+    pointer-events:none;
+  }
+  @keyframes cellRing{
+    0%{transform:scale(1); opacity:.9;}
+    100%{transform:scale(1.35); opacity:0;}
+  }
 
   /* ---------- preview panel ---------- */
   .chars-panel{
@@ -419,6 +458,7 @@
   #panelName{opacity:.85;}
   #panelCode{opacity:.5; white-space:nowrap;}
   .panel-stage{
+    position:relative;
     flex:1;
     min-height:clamp(260px,38vw,440px);
     display:flex;
@@ -426,15 +466,18 @@
     justify-content:center;
     padding:10px 0;
   }
+  .panel-bracket{
+    position:absolute;
+    top:14px;
+    width:14px;
+    height:14px;
+  }
+  .panel-bracket.left{left:0; border-left:2px solid rgba(11,26,22,.35); border-top:2px solid rgba(11,26,22,.35);}
+  .panel-bracket.right{right:0; bottom:14px; top:auto; border-right:2px solid rgba(11,26,22,.35); border-bottom:2px solid rgba(11,26,22,.35);}
   .panel-letter{
     font-size:clamp(150px,28vw,400px);
     line-height:1;
     color:var(--ink);
-    animation:panelBreathe 5s ease-in-out infinite;
-  }
-  @keyframes panelBreathe{
-    0%,100%{transform:scale(1);}
-    50%{transform:scale(1.02);}
   }
   @media(max-width:900px){
     .panel-stage{min-height:200px;}
@@ -727,6 +770,8 @@
 </head>
 <body>
 
+<div class="scroll-progress" id="scrollProgress"></div>
+
 <div class="arch-cursor" id="archCursor">
   <svg viewBox="0 0 26 26"><path d="M2 24 V14 A11 11 0 0 1 24 14 V24" stroke="#eac2c8" stroke-width="2.4" fill="none" stroke-linecap="round"/></svg>
 </div>
@@ -750,7 +795,11 @@
 
   <div class="hero-content">
     <div class="coords"><span class="line"></span>23.26°N, 77.41°E — Bhopal, India<span class="line"></span></div>
-    <h1 class="hero-title serif-font" id="heroTitle"></h1>
+    <div class="title-row">
+      <span class="title-bracket left" aria-hidden="true"></span>
+      <h1 class="hero-title serif-font" id="heroTitle"></h1>
+      <span class="title-bracket right" aria-hidden="true"></span>
+    </div>
     <p class="hero-sub">Smooth serifs. Sharp edges. <b>Solid bold weight.</b> Built for headlines that want to take up space.</p>
     <div class="hero-actions">
       <a href="Bhopali.zip" download class="btn-primary">
@@ -764,7 +813,7 @@
 <section class="characters" id="characters">
   <div class="section-head">
     <span class="section-num">01</span>
-    <h2 class="section-title serif-font reveal">The characters</h2>
+    <h2 class="section-title serif-font">The characters</h2>
   </div>
   <p class="chars-intro reveal">Click any character to preview it large.</p>
 
@@ -776,7 +825,9 @@
         <span id="panelCode">U+0042</span>
       </div>
       <div class="panel-stage">
+        <span class="panel-bracket left" aria-hidden="true"></span>
         <div class="panel-letter serif-font" id="panelLetter">B</div>
+        <span class="panel-bracket right" aria-hidden="true"></span>
       </div>
     </div>
   </div>
@@ -831,7 +882,7 @@
 
   <div class="download-content">
     <span class="section-num reveal">02</span>
-    <h2 class="section-title serif-font reveal">Take it home.</h2>
+    <h2 class="section-title serif-font">Take it home.</h2>
     <p class="reveal">One weight. Every letter, number, and a handful of symbols &mdash; plus the license, all in one download.</p>
     <a href="Bhopali.zip" download class="download-btn reveal">
       Download Bhopali.zip <span class="arrow">↓</span>
@@ -853,7 +904,9 @@
 (function(){
   const reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 
-  /* ---------- hero title: blur-focus entrance, then an endless soft shimmer ---------- */
+  /* ---------- hero title: blur-focus entrance once, then stays fully
+     static and legible. Every ongoing animation nearby lives on
+     decorative, non-content elements only (brackets, particles). ---------- */
   const title = "Bhopali";
   const heroTitle = document.getElementById('heroTitle');
   const letterSpans = [];
@@ -865,11 +918,31 @@
     heroTitle.appendChild(span);
     letterSpans.push(span);
   });
+
+  /* Keep "Bhopali" on a single line at all times: reset to the CSS
+     clamp size, then measure and shrink only if it would overflow. */
+  function fitHeroTitle(){
+    heroTitle.style.fontSize = '';
+    const row = heroTitle.closest('.title-row') || heroTitle.parentElement;
+    const available = row.clientWidth;
+    const natural = heroTitle.scrollWidth;
+    if(natural > available && available > 0){
+      const cssSize = parseFloat(getComputedStyle(heroTitle).fontSize);
+      const fitted = Math.floor(cssSize * (available / natural) * 0.96);
+      heroTitle.style.fontSize = fitted + 'px';
+    }
+  }
+
   function revealTitle(){
     heroTitle.classList.add('ready');
-    const entranceDuration = letterSpans.length * 45 + 380;
-    setTimeout(()=> heroTitle.classList.add('alive'), entranceDuration);
+    fitHeroTitle();
   }
+
+  let resizeTimer;
+  window.addEventListener('resize', ()=>{
+    clearTimeout(resizeTimer);
+    resizeTimer = setTimeout(fitHeroTitle, 120);
+  });
 
   /* Don't reveal the heading until Bhopali itself has actually finished
      downloading — otherwise the fallback serif briefly shows, animates
@@ -885,6 +958,37 @@
     ]).then(revealTitle);
   } else {
     revealTitle();
+  }
+
+  /* ---------- decorative-only ongoing motion, via anime.js ----------
+     Nothing here ever touches actual text/content — only brackets and
+     ambient particles, which is exactly what should keep moving. */
+  if(!reduce && window.anime){
+    anime({
+      targets:'.title-bracket, .panel-bracket',
+      opacity:[0.35,0.85],
+      scale:[0.92,1.12],
+      easing:'easeInOutSine',
+      duration:2200,
+      delay:anime.stagger(250),
+      direction:'alternate',
+      loop:true
+    });
+
+    document.querySelectorAll('.drift').forEach((el,i)=>{
+      anime({
+        targets:el,
+        translateY:()=> anime.random(-26,-12),
+        translateX:()=> anime.random(-12,12),
+        opacity:[0.28,0.85],
+        scale:[0.85,1.25],
+        easing:'easeInOutSine',
+        duration:()=> anime.random(3200,6200),
+        delay:i*350,
+        direction:'alternate',
+        loop:true
+      });
+    });
   }
 
   /* ---------- character name lookup (real Unicode names) ---------- */
@@ -932,6 +1036,7 @@
     group.chars.forEach(ch=>{
       const cell = document.createElement('div');
       cell.className = 'cell serif-font';
+      cell.style.opacity = '0';
       cell.innerHTML = `<span class="glyph-char">${ch}</span>`;
       cell.addEventListener('click', ()=>{
         if(activeCell) activeCell.classList.remove('active');
@@ -1022,6 +1127,77 @@
     });
   },{threshold:.12});
   document.querySelectorAll('.reveal').forEach(el=>io.observe(el));
+
+  /* ---------- scroll progress bar: a real, continuous, always-on
+     scroll-driven animation, not a one-off reveal ---------- */
+  const scrollProgress = document.getElementById('scrollProgress');
+  let progressTicking = false;
+  function updateScrollProgress(){
+    const max = document.documentElement.scrollHeight - window.innerHeight;
+    const p = max > 0 ? Math.min(window.scrollY / max, 1) : 0;
+    scrollProgress.style.transform = `scaleX(${p})`;
+    progressTicking = false;
+  }
+  window.addEventListener('scroll', ()=>{
+    if(!progressTicking){ requestAnimationFrame(updateScrollProgress); progressTicking = true; }
+  }, {passive:true});
+  updateScrollProgress();
+
+  /* ---------- section titles: split into letters, thrown in with a
+     springy overshoot the moment they scroll into view ---------- */
+  if(window.anime && !reduce){
+    document.querySelectorAll('.section-title').forEach(el=>{
+      const text = el.textContent;
+      el.textContent = '';
+      [...text].forEach(ch=>{
+        const s = document.createElement('span');
+        s.textContent = ch === ' ' ? '\u00A0' : ch;
+        s.style.display = 'inline-block';
+        s.style.opacity = '0';
+        el.appendChild(s);
+      });
+      const letters = el.querySelectorAll('span');
+      const titleIO = new IntersectionObserver((entries)=>{
+        entries.forEach(entry=>{
+          if(entry.isIntersecting){
+            anime({
+              targets: letters,
+              opacity:[0,1],
+              translateY:[50,0],
+              scale:[0.6,1],
+              easing:'easeOutElastic(1,.65)',
+              duration:1100,
+              delay:anime.stagger(26)
+            });
+            titleIO.unobserve(el);
+          }
+        });
+      },{threshold:.4});
+      titleIO.observe(el);
+    });
+
+    /* ---------- character grid: cascades in, cell by cell ---------- */
+    const charsSection = document.getElementById('characters');
+    let cellsRevealed = false;
+    const cellsIO = new IntersectionObserver((entries)=>{
+      entries.forEach(entry=>{
+        if(entry.isIntersecting && !cellsRevealed){
+          cellsRevealed = true;
+          anime({
+            targets:'.cell',
+            opacity:[0,1],
+            scale:[0.4,1],
+            easing:'easeOutBack',
+            duration:650,
+            delay:anime.stagger(6)
+          });
+        }
+      });
+    },{threshold:.05});
+    if(charsSection) cellsIO.observe(charsSection);
+  } else {
+    document.querySelectorAll('.cell').forEach(c=> c.style.opacity = '1');
+  }
 
   /* ---------- custom arch cursor ---------- */
   const cursor = document.getElementById('archCursor');
